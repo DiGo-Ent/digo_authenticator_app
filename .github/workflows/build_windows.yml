@@ -40,14 +40,14 @@ jobs:
         shell: powershell
         run: |
           # Create a directory to package the executable and dlls
-          New-Item -ItemType Directory -Force -Path build\windows\runner\ReleasePackage
+          New-Item -ItemType Directory -Force -Path build\windows\x64\runner\ReleasePackage
           # Copy all compilation output files
-          Copy-Item -Path build\windows\runner\Release\* -Destination build\windows\runner\ReleasePackage -Recurse -Force
+          Copy-Item -Path build\windows\x64\runner\Release\* -Destination build\windows\x64\runner\ReleasePackage -Recurse -Force
           # Compress the directory into a zip archive
-          Compress-Archive -Path build\windows\runner\ReleasePackage\* -DestinationPath build\windows\runner\digo_authenticator_windows.zip -Force
+          Compress-Archive -Path build\windows\x64\runner\ReleasePackage\* -DestinationPath digo_authenticator_windows.zip -Force
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: build\windows\runner\digo_authenticator_windows.zip
+          path: digo_authenticator_windows.zip
