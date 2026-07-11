@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,10 +17,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedGroup = 'All';
+  String? _copiedAccountId;
+  Timer? _copyTimer;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _copyTimer?.cancel();
     super.dispose();
   }
 
@@ -49,7 +53,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizations.translate('app_title')),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/digo_logo.png',
+                height: 32,
+                width: 32,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(localizations.translate('app_title')),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -149,6 +168,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             },
                           ),
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Powered by DiGo',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.0,
+                      ),
+                ),
+              ),
             ],
           ),
         ),
@@ -168,10 +198,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.phonelink_lock_outlined,
-              size: 72,
-              color: Theme.of(context).colorScheme.outline,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'assets/digo_logo.png',
+                height: 80,
+                width: 80,
+                fit: BoxFit.cover,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -216,12 +250,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         onTap: () {
           Clipboard.setData(ClipboardData(text: otp));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localizations.translate('otp_copied')),
-              duration: const Duration(seconds: 1),
-            ),
-          );
+          _copyTimer?.cancel();
+          setState(() {
+            _copiedAccountId = account.id;
+          });
+          _copyTimer = Timer(const Duration(milliseconds: 1200), () {
+            if (mounted) {
+              setState(() {
+                if (_copiedAccountId == account.id) {
+                  _copiedAccountId = null;
+                }
+              });
+            }
+          });
         },
         onLongPress: () => context.push('/detail/${account.id}'),
         child: Padding(
@@ -294,13 +335,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    formattedOtp,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: primaryColor,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.2,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, animation) {
+                      return ScaleTransition(
+                        scale: animation,
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
                         ),
+                      );
+                    },
+                    child: _copiedAccountId == account.id
+                        ? Container(
+                            key: const ValueKey('copied'),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Copied',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Text(
+                            formattedOtp,
+                            key: const ValueKey('otp'),
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.2,
+                                ),
+                          ),
                   ),
                   const SizedBox(width: 16),
                   isTotp

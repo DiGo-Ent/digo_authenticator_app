@@ -10,15 +10,11 @@ import 'features/settings/presentation/providers/settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Setup GetIt dependency injections
   await setupDependencyInjection();
-  
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
@@ -31,16 +27,13 @@ class MyApp extends ConsumerWidget {
 
     return LifecycleWatcher(
       child: MaterialApp.router(
-        title: 'Digo Authenticator',
+        title: 'DiGo Authenticator',
         debugShowCheckedModeBanner: false,
         themeMode: settingsState.themeMode,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         locale: settingsState.locale,
-        supportedLocales: const [
-          Locale('en'),
-          Locale('hi'),
-        ],
+        supportedLocales: const [Locale('en'), Locale('hi')],
         localizationsDelegates: const [
           AppLocalizationsDelegate(),
           GlobalMaterialLocalizations.delegate,
@@ -61,7 +54,8 @@ class LifecycleWatcher extends ConsumerStatefulWidget {
   ConsumerState<LifecycleWatcher> createState() => _LifecycleWatcherState();
 }
 
-class _LifecycleWatcherState extends ConsumerState<LifecycleWatcher> with WidgetsBindingObserver {
+class _LifecycleWatcherState extends ConsumerState<LifecycleWatcher>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();

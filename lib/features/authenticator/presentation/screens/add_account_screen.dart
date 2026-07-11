@@ -190,11 +190,12 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                           children: [
                             Expanded(
                               child: DropdownButtonFormField<String>(
+                                isExpanded: true,
                                 initialValue: _type,
                                 decoration: const InputDecoration(labelText: 'Type'),
                                 items: const [
-                                  DropdownMenuItem(value: 'totp', child: Text('TOTP (Time-based)')),
-                                  DropdownMenuItem(value: 'hotp', child: Text('HOTP (Counter-based)')),
+                                  DropdownMenuItem(value: 'totp', child: Text('TOTP')),
+                                  DropdownMenuItem(value: 'hotp', child: Text('HOTP')),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) {
@@ -208,6 +209,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: DropdownButtonFormField<String>(
+                                isExpanded: true,
                                 initialValue: _algorithm,
                                 decoration: InputDecoration(labelText: localizations.translate('algorithm')),
                                 items: const [
@@ -233,6 +235,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                           children: [
                             Expanded(
                               child: DropdownButtonFormField<int>(
+                                isExpanded: true,
                                 initialValue: _digits,
                                 decoration: InputDecoration(labelText: localizations.translate('digits')),
                                 items: const [
@@ -252,6 +255,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                             Expanded(
                               child: _type == 'totp'
                                   ? DropdownButtonFormField<int>(
+                                      isExpanded: true,
                                       initialValue: _period,
                                       decoration: InputDecoration(labelText: localizations.translate('period')),
                                       items: const [

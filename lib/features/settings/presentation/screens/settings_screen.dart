@@ -65,7 +65,15 @@ class SettingsScreen extends ConsumerWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.shield_outlined, size: 48, color: Colors.blue),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/digo_logo.png',
+                  height: 64,
+                  width: 64,
+                  fit: BoxFit.cover,
+                ),
+              ),
               const SizedBox(height: 16),
               Text(
                 localizations.translate('about_text'),
@@ -73,6 +81,11 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               const Text('Version: 1.0.0 (Enterprise)'),
+              const SizedBox(height: 8),
+              const Text(
+                'Powered by DiGo',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              ),
             ],
           ),
           actions: [
@@ -285,6 +298,18 @@ class SettingsScreen extends ConsumerWidget {
             title: Text(localizations.translate('privacy_policy')),
             onTap: () => _showPrivacyDialog(context, localizations),
           ),
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              'Powered by DiGo',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1.0,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     ),

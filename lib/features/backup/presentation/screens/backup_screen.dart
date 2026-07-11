@@ -353,6 +353,18 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+              Center(
+                child: Text(
+                  'Powered by DiGo',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.0,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

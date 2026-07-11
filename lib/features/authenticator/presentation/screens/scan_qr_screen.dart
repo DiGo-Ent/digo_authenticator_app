@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/security/qr_decoder_service.dart';
 import '../../domain/models/otp_account.dart';
 import '../providers/authenticator_provider.dart';
 
@@ -18,6 +19,51 @@ class _ScanQrScreenState extends ConsumerState<ScanQrScreen> {
   final TextEditingController _pasteController = TextEditingController();
   bool _flashOn = false;
   MobileScannerController? _scannerController;
+  bool _isScreenScanning = false;
+
+  void _scanDesktopScreen() async {
+    setState(() {
+      _isScreenScanning = true;
+    });
+
+    // A tiny delay to let user prepare or UI to update
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    final file = await QrDecoderService.captureScreen();
+    if (file == null) {
+      _showError('Failed to capture desktop screen.');
+      setState(() {
+        _isScreenScanning = false;
+      });
+      return;
+    }
+
+    final decodedText = QrDecoderService.decodeQrFromImage(file);
+    // Cleanup the temp file
+    try {
+      await file.delete();
+    } catch (_) {}
+
+    if (decodedText != null && decodedText.startsWith('otpauth://')) {
+      _processUri(decodedText);
+    } else {
+      _showError('No valid QR code found on the screen. Make sure the QR code is visible on your primary monitor.');
+    }
+
+    setState(() {
+      _isScreenScanning = false;
+    });
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -138,6 +184,41 @@ class _ScanQrScreenState extends ConsumerState<ScanQrScreen> {
                   ],
                 ),
               ),
+
+            // Capture Desktop Screen Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                      foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: _isScreenScanning ? null : _scanDesktopScreen,
+                    icon: _isScreenScanning
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.monitor_rounded),
+                    label: Text(_isScreenScanning ? 'Scanning screen...' : 'Scan QR from Desktop Screen'),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This will capture your primary monitor screen and scan for any visible QR codes.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        ),
+                  ),
+                  const Divider(height: 32),
+                ],
+              ),
+            ),
 
             // Paste URI Section
             Padding(

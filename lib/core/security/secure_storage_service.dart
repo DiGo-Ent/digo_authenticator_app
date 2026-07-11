@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:crypto/crypto.dart';
 
@@ -29,9 +30,10 @@ class SecureStorageService {
   Future<String> getOrCreateMasterKey() async {
     String? key = await _read(_keyMasterKey);
     if (key == null) {
-      // Generate a new 256-bit key (32 bytes) in hex format
-      final random = List<int>.generate(32, (i) => (DateTime.now().microsecondsSinceEpoch + i) % 256);
-      key = sha256.convert(random).toString();
+      // Generate a new 256-bit key (32 bytes) in hex format securely
+      final random = Random.secure();
+      final values = List<int>.generate(32, (_) => random.nextInt(256));
+      key = sha256.convert(values).toString();
       await _write(_keyMasterKey, key);
     }
     return key;

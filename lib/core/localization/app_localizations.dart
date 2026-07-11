@@ -12,7 +12,7 @@ class AppLocalizations {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
-      'app_title': 'Digo Authenticator',
+      'app_title': 'DiGo Authenticator',
       'search_placeholder': 'Search accounts...',
       'otp_copied': 'OTP copied to clipboard',
       'add_account': 'Add Account',
@@ -56,7 +56,7 @@ class AppLocalizations {
       'confirm_pin': 'Confirm Security PIN',
       'pins_do_not_match': 'PINs do not match. Try again.',
       'incorrect_pin': 'Incorrect PIN. Remaining attempts: {attempts}',
-      'biometric_prompt': 'Authenticate to unlock Digo Authenticator',
+      'biometric_prompt': 'Authenticate to unlock DiGo Authenticator',
       'time_correction': 'Sync Time (Time Correction)',
       'time_sync_success': 'Time offset corrected by {offset}ms',
       'favorites': 'Favorites',
@@ -73,7 +73,7 @@ class AppLocalizations {
       'copied_uri': 'Account URI copied to clipboard',
     },
     'hi': {
-      'app_title': 'डिगो प्रमाणक',
+      'app_title': 'DiGo Authenticator',
       'search_placeholder': 'खाते खोजें...',
       'otp_copied': 'ओटीपी क्लिपबोर्ड पर कॉपी हो गया',
       'add_account': 'खाता जोड़ें',
@@ -117,7 +117,7 @@ class AppLocalizations {
       'confirm_pin': 'सुरक्षा पिन की पुष्टि करें',
       'pins_do_not_match': 'पिन मेल नहीं खाते। पुन: प्रयास करें।',
       'incorrect_pin': 'गलत पिन। शेष प्रयास: {attempts}',
-      'biometric_prompt': 'डिगो प्रमाणक को अनलॉक करने के लिए प्रमाणित करें',
+      'biometric_prompt': 'DiGo Authenticator को अनलॉक करने के लिए प्रमाणित करें',
       'time_correction': 'समय सुधार (सिंक)',
       'time_sync_success': 'समय ऑफसेट {offset}ms द्वारा ठीक किया गया',
       'favorites': 'पसंदीदा',

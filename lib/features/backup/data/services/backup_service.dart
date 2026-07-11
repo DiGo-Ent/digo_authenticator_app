@@ -97,7 +97,7 @@ class BackupService {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path)],
-        subject: 'Digo Authenticator Encrypted Backup',
+        subject: 'DiGo Authenticator Encrypted Backup',
       ),
     );
   }

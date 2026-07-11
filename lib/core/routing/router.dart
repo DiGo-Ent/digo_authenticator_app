@@ -16,13 +16,14 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: authState.isLocked ? '/lock' : '/',
     redirect: (context, state) {
-      final isLocked = ref.read(authProvider).isLocked;
+      final auth = ref.read(authProvider);
+      final isLocked = auth.isLocked;
       final isLockingRoute = state.matchedLocation == '/lock';
 
       if (isLocked && !isLockingRoute) {
         return '/lock';
       }
-      if (!isLocked && isLockingRoute) {
+      if (!isLocked && isLockingRoute && auth.isPinSetupCompleted) {
         return '/';
       }
       return null;

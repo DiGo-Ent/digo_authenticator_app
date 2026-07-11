@@ -36,17 +36,13 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   }
 
   void _onKeyPress(String key) {
-    if (_pin.length >= 8) return;
+    if (_pin.length >= 6) return;
     setState(() {
       _pin.add(key);
       _errorMessage = '';
     });
-    if (_pin.length >= 4) {
-      // Auto submit if it's authentication mode
-      final authState = ref.read(authProvider);
-      if (authState.isPinSetupCompleted && _pin.length == 6) {
-        _submitPin();
-      }
+    if (_pin.length == 6) {
+      _submitPin();
     }
   }
 
@@ -65,13 +61,6 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     if (!authState.isPinSetupCompleted) {
       // PIN Setup Mode
       if (!_isConfirming) {
-        if (enteredPin.length < 4) {
-          setState(() {
-            _errorMessage = 'PIN must be at least 4 digits';
-            _pin.clear();
-          });
-          return;
-        }
         setState(() {
           _firstPin = enteredPin;
           _isConfirming = true;
@@ -128,13 +117,17 @@ class _LockScreenState extends ConsumerState<LockScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const SizedBox(height: 20),
-            // Header: Icon + Title
+            // Header: Logo + Title
             Column(
               children: [
-                Icon(
-                  Icons.lock_outline_rounded,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.primary,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/digo_logo.png',
+                    height: 80,
+                    width: 80,
+                    fit: BoxFit.cover,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -162,7 +155,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
-                    authState.isPinSetupCompleted ? 6 : 4,
+                    6,
                     (index) {
                       final active = index < _pin.length;
                       return Container(
@@ -180,14 +173,16 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                if (!authState.isPinSetupCompleted && _isConfirming == false)
+                if (!authState.isPinSetupCompleted)
                   Text(
-                    'Enter 4 digits',
+                    _isConfirming
+                        ? 'Re-enter your 6-digit PIN to confirm'
+                        : 'Enter 6 digits to setup your PIN',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 if (authState.isPinSetupCompleted)
                   Text(
-                    'Enter 6 digits',
+                    'Enter 6 digits to unlock',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
               ],
@@ -226,12 +221,17 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  if (!authState.isPinSetupCompleted)
-                    ElevatedButton(
-                      onPressed: _pin.length >= 4 ? _submitPin : null,
-                      child: Text(localizations.translate('save')),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Text(
+                      'Powered by DiGo',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 1.0,
+                          ),
                     ),
+                  ),
                 ],
               ),
             ),
