@@ -66,11 +66,11 @@ class SettingsScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
                   'assets/digo_logo.png',
-                  height: 64,
-                  width: 64,
+                  height: 96,
+                  width: 96,
                   fit: BoxFit.cover,
                 ),
               ),

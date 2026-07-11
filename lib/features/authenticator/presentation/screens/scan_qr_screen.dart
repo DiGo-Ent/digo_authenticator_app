@@ -7,6 +7,7 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/security/qr_decoder_service.dart';
 import '../../domain/models/otp_account.dart';
 import '../providers/authenticator_provider.dart';
+import 'screen_snip_overlay.dart';
 
 class ScanQrScreen extends ConsumerStatefulWidget {
   const ScanQrScreen({super.key});
@@ -26,11 +27,9 @@ class _ScanQrScreenState extends ConsumerState<ScanQrScreen> {
       _isScreenScanning = true;
     });
 
-    // A tiny delay to let user prepare or UI to update
-    await Future.delayed(const Duration(milliseconds: 300));
-
+    // Step 1: Capture the screen
     final file = await QrDecoderService.captureScreen();
-    if (file == null) {
+    if (file == null || !mounted) {
       _showError('Failed to capture desktop screen.');
       setState(() {
         _isScreenScanning = false;
@@ -38,7 +37,42 @@ class _ScanQrScreenState extends ConsumerState<ScanQrScreen> {
       return;
     }
 
-    final decodedText = QrDecoderService.decodeQrFromImage(file);
+    setState(() {
+      _isScreenScanning = false;
+    });
+
+    // Step 2: Open the snipping overlay with the screenshot
+    final result = await Navigator.of(context).push<Rect?>(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return ScreenSnipOverlay(screenshotFile: file);
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 200),
+      ),
+    );
+
+    if (result == null) {
+      // User cancelled snipping
+      try {
+        await file.delete();
+      } catch (_) {}
+      return;
+    }
+
+    // Step 3: Decode QR from the selected region
+    final decodedText = QrDecoderService.decodeQrFromImageRegion(
+      file,
+      x: result.left.toInt(),
+      y: result.top.toInt(),
+      width: result.width.toInt(),
+      height: result.height.toInt(),
+    );
+
     // Cleanup the temp file
     try {
       await file.delete();
@@ -47,12 +81,8 @@ class _ScanQrScreenState extends ConsumerState<ScanQrScreen> {
     if (decodedText != null && decodedText.startsWith('otpauth://')) {
       _processUri(decodedText);
     } else {
-      _showError('No valid QR code found on the screen. Make sure the QR code is visible on your primary monitor.');
+      _showError('No valid QR code found in the selected area. Try selecting just the QR code.');
     }
-
-    setState(() {
-      _isScreenScanning = false;
-    });
   }
 
   void _showError(String message) {
@@ -204,12 +234,12 @@ class _ScanQrScreenState extends ConsumerState<ScanQrScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.monitor_rounded),
-                    label: Text(_isScreenScanning ? 'Scanning screen...' : 'Scan QR from Desktop Screen'),
+                        : const Icon(Icons.crop_free_rounded),
+                    label: Text(_isScreenScanning ? 'Capturing screen...' : 'Snip & Scan QR from Screen'),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'This will capture your primary monitor screen and scan for any visible QR codes.',
+                    'Captures your screen, then lets you draw a rectangle around the QR code to scan it.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),

@@ -110,22 +110,25 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Stack(
           children: [
-            const SizedBox(height: 20),
+            // Main content
+            Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const SizedBox(height: 20),
             // Header: Logo + Title
             Column(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(28),
                   child: Image.asset(
                     'assets/digo_logo.png',
-                    height: 80,
-                    width: 80,
+                    height: 140,
+                    width: 140,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -239,8 +242,29 @@ class _LockScreenState extends ConsumerState<LockScreen> {
         ),
       ),
     ),
-  ),
-);
+            // Back button overlay (only during PIN setup, not during unlock)
+            if (!authState.isPinSetupCompleted)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                  ),
+                  onPressed: () {
+                    // Skip PIN setup and go to home
+                    ref.read(authProvider.notifier).setupCredential('', 'none');
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildKeypadButton(String text) {

@@ -14,17 +14,46 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _selectedGroup = 'All';
   String? _copiedAccountId;
   Timer? _copyTimer;
+  bool _isFabOpen = false;
+  late AnimationController _fabAnimController;
+  late Animation<double> _fabAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fabAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _fabAnimation = CurvedAnimation(
+      parent: _fabAnimController,
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     _copyTimer?.cancel();
+    _fabAnimController.dispose();
     super.dispose();
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _isFabOpen = !_isFabOpen;
+    });
+    if (_isFabOpen) {
+      _fabAnimController.forward();
+    } else {
+      _fabAnimController.reverse();
+    }
   }
 
   @override
@@ -57,11 +86,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
               child: Image.asset(
                 'assets/digo_logo.png',
-                height: 32,
-                width: 32,
+                height: 44,
+                width: 44,
                 fit: BoxFit.cover,
               ),
             ),
@@ -183,11 +212,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddAccountMenu(context, localizations),
-        icon: const Icon(Icons.add),
-        label: Text(localizations.translate('add_account')),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Speed dial options
+          FadeTransition(
+            opacity: _fabAnimation,
+            child: ScaleTransition(
+              scale: _fabAnimation,
+              alignment: Alignment.bottomCenter,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Scan QR option
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Material(
+                          color: Theme.of(context).colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Text(
+                              localizations.translate('scan_qr'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        FloatingActionButton.small(
+                          heroTag: 'fab_scan',
+                          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                          onPressed: () {
+                            _toggleFab();
+                            context.push('/scan');
+                          },
+                          child: const Icon(Icons.qr_code_scanner_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Manual Entry option
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Material(
+                          color: Theme.of(context).colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Text(
+                              localizations.translate('manual_entry'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        FloatingActionButton.small(
+                          heroTag: 'fab_manual',
+                          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                          onPressed: () {
+                            _toggleFab();
+                            context.push('/add');
+                          },
+                          child: const Icon(Icons.keyboard_outlined),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Main FAB with animated + / × icon
+          FloatingActionButton(
+            heroTag: 'fab_main',
+            onPressed: _toggleFab,
+            child: AnimatedBuilder(
+              animation: _fabAnimController,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _fabAnimController.value * 0.75 * 3.14159,
+                  child: Icon(_isFabOpen ? Icons.close : Icons.add),
+                );
+              },
+            ),
+          ),
+        ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -266,74 +397,128 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         onLongPress: () => context.push('/detail/${account.id}'),
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (showDragHandle)
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Icon(
-                      Icons.drag_indicator_rounded,
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
+              // Top row: drag handle + account info + menu button
+              Row(
+                children: [
+                  if (showDragHandle)
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Icon(
+                          Icons.drag_indicator_rounded,
+                          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              // Icon & Account details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  if (account.isFavorite)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Icon(
+                        Icons.star_rounded,
+                        size: 18,
+                        color: Colors.amber[700],
+                      ),
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (account.isFavorite)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: Icon(
-                              Icons.star_rounded,
-                              size: 18,
-                              color: Colors.amber[700],
-                            ),
-                          ),
                         Text(
                           account.issuer,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          account.accountName,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      account.accountName,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    if (account.groupName.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(8),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.outline),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 140),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        context.push('/detail/${account.id}');
+                      } else if (value == 'delete') {
+                        _showDeleteConfirmDialog(context, account);
+                      } else if (value == 'favorite') {
+                        ref.read(authenticatorProvider.notifier).toggleFavorite(account.id);
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            const Text('Edit'),
+                          ],
                         ),
-                        child: Text(
-                          account.groupName,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSecondaryContainer,
-                              ),
+                      ),
+                      PopupMenuItem(
+                        value: 'favorite',
+                        child: Row(
+                          children: [
+                            Icon(
+                              account.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                              size: 20,
+                              color: Colors.amber[700],
+                            ),
+                            const SizedBox(width: 8),
+                            Text(account.isFavorite ? 'Unfavorite' : 'Favorite'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.red),
+                            const SizedBox(width: 8),
+                            const Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
                         ),
                       ),
                     ],
-                  ],
-                ),
+                  ),
+                ],
               ),
-
-              // OTP Code + Countdown Circle or HOTP Refresh Button
+              if (account.groupName.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      account.groupName,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSecondaryContainer,
+                          ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              // Bottom row: OTP code + countdown/refresh
               Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
@@ -349,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: _copiedAccountId == account.id
                         ? Container(
                             key: const ValueKey('copied'),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.green.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
@@ -357,14 +542,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
+                                Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
                                 SizedBox(width: 6),
                                 Text(
-                                  'Copied',
+                                  'Copied!',
                                   style: TextStyle(
                                     color: Colors.green,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontSize: 18,
                                   ),
                                 ),
                               ],
@@ -376,15 +561,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                   color: primaryColor,
                                   fontWeight: FontWeight.w600,
-                                  letterSpacing: 1.2,
+                                  letterSpacing: 2.0,
                                 ),
                           ),
                   ),
-                  const SizedBox(width: 16),
                   isTotp
                       ? SizedBox(
-                          width: 28,
-                          height: 28,
+                          width: 32,
+                          height: 32,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
@@ -419,37 +603,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showAddAccountMenu(BuildContext context, AppLocalizations localizations) {
-    showModalBottomSheet(
+  void _showDeleteConfirmDialog(BuildContext context, OtpAccount account) {
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.qr_code_scanner_rounded),
-                title: Text(localizations.translate('scan_qr')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/scan');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.keyboard_outlined),
-                title: Text(localizations.translate('manual_entry')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/add');
-                },
-              ),
-            ],
-          ),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Account'),
+          content: Text('Are you sure you want to delete the account "${account.issuer} (${account.accountName})"? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: () {
+                ref.read(authenticatorProvider.notifier).deleteAccount(account.id);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${account.issuer} deleted'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
         );
       },
     );
   }
+
+
 }
