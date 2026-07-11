@@ -1,0 +1,53 @@
+name: Build Windows Application
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Enable Windows Desktop support
+        run: flutter config --enable-windows-desktop
+
+      - name: Build Windows App
+        run: flutter build windows --release
+
+      - name: Package Release
+        shell: powershell
+        run: |
+          # Create a directory to package the executable and dlls
+          New-Item -ItemType Directory -Force -Path build\windows\runner\ReleasePackage
+          # Copy all compilation output files
+          Copy-Item -Path build\windows\runner\Release\* -Destination build\windows\runner\ReleasePackage -Recurse -Force
+          # Compress the directory into a zip archive
+          Compress-Archive -Path build\windows\runner\ReleasePackage\* -DestinationPath build\windows\runner\digo_authenticator_windows.zip -Force
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: build\windows\runner\digo_authenticator_windows.zip
